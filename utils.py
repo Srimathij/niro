@@ -1,4 +1,5 @@
 import os
+import re
 from dotenv import load_dotenv
 import langid
 from groq import Groq
@@ -31,6 +32,13 @@ def trim_chat_history():
     global chat_history
     chat_history = chat_history[-MAX_HISTORY:]
 
+def extract_tile_name(question):
+    """Extracts the full tile name from the user's input."""
+    match = re.search(r'order (.+?)(?: tile|$)', question, re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+    return "Unknown Tile"
+
 def get_response(question):
     global chat_history
 
@@ -40,6 +48,11 @@ def get_response(question):
     try:
         # Detect language (default is English)
         lang = detect_language(question)
+
+        # Extract tile name from user input
+        tile_name = extract_tile_name(question)
+        size = "15x20"  # Default size
+        available_qty = 6  # Default available quantity
 
         # Reference URL
         urls = """
@@ -53,34 +66,34 @@ def get_response(question):
         # Trim chat history to avoid exceeding token limits
         trim_chat_history()
 
-        # Use the original system prompt
+        # Use the corrected system prompt
         template_en = f"""You are an AI assistant specializing in **Niro Ceramic Group** products, including **porcelain and ceramic tiles, glass mosaics, and bathroom sanitaryware**. Your primary goal is to assist users efficiently in ordering tiles while providing accurate information about **Niro Ceramic Group** and its website.
 
         ## **Ordering Flow:**
-        1. **Tile Selection:**  
+        ### 1️⃣ **Tile Selection:**  
         - If the user expresses interest in ordering tiles (e.g., *"I would love to order some tiles"*), ask for the tile name.  
         - Once the user provides the tile name, fetch and display the details in a structured table format:  
 
-                | **Tile Name**         | **Size**   | **Available Qty** | **Product URL** |
-                |----------------------|-----------|----------------|----------------|
-                | [Tile Name]         | 15x20   | 6 | [Product Link] |
+            | **Tile Name**  | **Size** | **Available Qty** | **Product URL** |
+            |--------------|---------|----------------|----------------|
+            | {tile_name} | {size}   | {available_qty} | [View Product](https://www.nirogranite.co.id/product/{tile_name.replace(' ', '-').lower()}/) |
 
         - Follow up with:  
             **"Here are the details. How many units would you like to order?"**
 
-        2. **Quantity Confirmation:**  
+        ### 2️⃣ **Quantity Confirmation:**  
         - When the user specifies the quantity (e.g., *"I need 5 units"*), generate an updated order confirmation table:  
 
-                | **Tile Name**         | **Size**   | **Required Qty** | **Product URL** |
-                |----------------------|-----------|----------------|----------------|
-                | [Tile Name]         | [Size]    | [Required Qty] | [Product Link] |
+            | **Tile Name**  | **Size**  | **Required Qty** | **Product URL** |
+            |--------------|--------|----------------|----------------|
+            | {tile_name} | {size} | {available_qty} | [View Product](https://www.nirogranite.co.id/product/{tile_name.replace(' ', '-').lower()}/) |
 
         - Follow up with:  
             **"Would you like to confirm your order?"**
 
-        3. **Order Finalization:**  
+        ### 3️⃣ **Order Finalization:**  
         - If the user confirms with **"Yes," "Proceed," "Confirm," "Yeah"**, etc., respond with:  
-            **"Thank you! Your order for [X] units has been placed. A confirmation email has been sent to your registered email address."**
+            **"Thank you! Your order for {available_qty} units has been placed. A confirmation email has been sent to your registered email address."**
 
         ## **General Niro Ceramic Group Information:**
         - If the user asks about **company details, headquarters, store locations, or website-related queries**, provide accurate information.  
