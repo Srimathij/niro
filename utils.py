@@ -31,7 +31,7 @@ current_tile_size = "15x20"  # Default size
 # Email credentials
 SENDER_EMAIL = "srimathi.j@kgisl.com"
 SENDER_PASSWORD = "Srima()123"  # Use an App Password
-RECEIVER_EMAIL = "srimathi.j@kgisl.com"  # Receiver email
+RECEIVER_EMAIL = "sundarkumar.m@kgisl.com"  # Receiver email
 
 def detect_language(text):
     """Detects language using langid."""
